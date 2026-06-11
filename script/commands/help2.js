@@ -28,9 +28,9 @@ const boyImages = [
 
 // ⚠️ ضع هنا روابط الـ 3 صور الخاصة بالمرأة (البنات)
 const girlImages = [
-  "https://example.com/girl1.jpg",
-  "https://example.com/girl2.jpg",
-  "https://example.com/girl3.jpg"
+  "https://i.postimg.cc/52Lr5LbJ/e1d416de446e7d87b22c20400a29ea5c.jpg",
+  "https://i.postimg.cc/rmQ30TcD/c7c3a00077b53adf4b89d2a98493381a.jpg",
+  "https://i.postimg.cc/Nf5qXKKT/845958285e41dcc36edd4381a74a8e7f.jpg"
 ];
 
 // دالة مخصصة لتحميل وإحضار الصورة بناءً على الجنس

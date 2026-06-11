@@ -13,37 +13,82 @@ module.exports.config = {
     delay: 5,
 };
 
-const IMAGE_URL = "https://i.postimg.cc/zX8GQwtz/68747470733a2f2f692e696d6775722e636f6d2f61414f353873512e6a706567.jpg";
+// الصورة الافتراضية القديمة في حال فشل النظام في التعرف على الجنس
+const DEFAULT_IMAGE_URL = "https://i.postimg.cc/zX8GQwtz/68747470733a2f2f692e696d6775722e636f6d2f61414f353873512e6a706567.jpg";
 const LOCAL_IMG_PATH = path.join(__dirname, "img", "menu.png");
-const FALLBACK_IMG_PATH = path.join(__dirname, "cache", "menu.jpg");
 const BOT_NAME = "Mirror Bot v2.0.1";
 const DEVELOPER_NAME = "Hakim Tracks";
 
-async function getImageStream() {
-  
+// ⚠️ ضع هنا روابط الـ 3 صور الخاصة بالرجل (الأولاد)
+const boyImages = [
+  "https://example.com/boy1.jpg",
+  "https://example.com/boy2.jpg",
+  "https://example.com/boy3.jpg"
+];
+
+// ⚠️ ضع هنا روابط الـ 3 صور الخاصة بالمرأة (البنات)
+const girlImages = [
+  "https://example.com/girl1.jpg",
+  "https://example.com/girl2.jpg",
+  "https://example.com/girl3.jpg"
+];
+
+// دالة مخصصة لتحميل وإحضار الصورة بناءً على الجنس
+async function getGenderImageStream(senderID, api) {
+  // أولاً: التحقق من وجود صورة محلية ثابتة داخل مجلد البوت
   if (fs.existsSync(LOCAL_IMG_PATH)) {
     return fs.createReadStream(LOCAL_IMG_PATH);
-}
+  }
 
-  
-  fs.ensureDirSync(path.dirname(FALLBACK_IMG_PATH));
-  if (!fs.existsSync(FALLBACK_IMG_PATH)) {
-    try {
-        const res = await axios.get(IMAGE_URL, { responseType: "arraybuffer"});
-        fs.writeFileSync(FALLBACK_IMG_PATH, res.data);
-    } catch (e) {
-        console.error("Error downloading help image:", e);
-        return null;
+  let finalImageUrl = DEFAULT_IMAGE_URL;
+
+  // جلب الجنس عبر API فيسبوك
+  try {
+    const userInfo = await new Promise((resolve, reject) => {
+      api.getUserInfo(senderID, (err, res) => {
+        if (err) reject(err);
+        else resolve(res);
+      });
+    });
+
+    if (userInfo && userInfo[senderID]) {
+      const gender = userInfo[senderID].gender; // 1 = بنت، 2 = ولد
+
+      if (gender === 1 && boyImages.length > 0) {
+        // إذا كانت بنت، نختار صورة ولد عشوائية
+        finalImageUrl = boyImages[Math.floor(Math.random() * boyImages.length)];
+      } else if (gender === 2 && girlImages.length > 0) {
+        // إذا كان ولد، نختار صورة بنت عشوائية
+        finalImageUrl = girlImages[Math.floor(Math.random() * girlImages.length)];
+      }
     }
+  } catch (error) {
+    console.error("فشل جلب جنس المستخدم، سيتم استخدام الصورة الافتراضية:", error);
+  }
+
+  // تحميل الصورة المختارة وحفظها مؤقتاً في كاش فريد لكل مستخدم
+  const fallbackPath = path.join(__dirname, "cache", `menu_${senderID}.jpg`);
+  fs.ensureDirSync(path.dirname(fallbackPath));
+
+  try {
+    const res = await axios.get(finalImageUrl, { responseType: "arraybuffer" });
+    fs.writeFileSync(fallbackPath, res.data);
+    return fs.createReadStream(fallbackPath);
+  } catch (e) {
+    console.error("خطأ أثناء تحميل الصورة المطلوبة:", e);
+    // كحل أخير إذا فشل التحميل تماماً، نحاول إرجاع الصورة الافتراضية
+    try {
+      const res = await axios.get(DEFAULT_IMAGE_URL, { responseType: "arraybuffer" });
+      fs.writeFileSync(fallbackPath, res.data);
+      return fs.createReadStream(fallbackPath);
+    } catch (err) {
+      return null;
+    }
+  }
 }
-
-  return fs.createReadStream(FALLBACK_IMG_PATH);
-}
-
-
 
 module.exports.HakimRun = async function({ api, event, args }) {
-  const { threadID } = event;
+  const { threadID, senderID, messageID } = event;
   const commandsMap = Mirror.client.commands;
 
   const uniqueCommands = new Map();
@@ -53,8 +98,8 @@ module.exports.HakimRun = async function({ api, event, args }) {
     }
   }
 
+  // في حال طلب قائمة الأوامر كاملة
   if (args.length === 0) {
-    
     const grouped = {};
     for (const [title, cmd] of uniqueCommands.entries()) {  
       const cat = cmd.config.section || "بدون فئة";
@@ -62,45 +107,45 @@ module.exports.HakimRun = async function({ api, event, args }) {
       grouped[cat].push(title);
     }
 
-    
     let msg = ``;
     msg += `╮───────∙⋆⋅ ※ ⋅⋆∙───────╭\n`; 
     msg += `    قـــائــمــة الاوامـــــر\n`; 
     msg += `╯───────∙⋆⋅ ※ ⋅⋆∙───────╰\n\n`; 
     for (const [category, list] of Object.entries(grouped)) {
-      
       msg += `╮────∙⋆⋅「 ${category} 」\n`;
       
       let commandLines = [];
       for (let i = 0; i < list.length; i += 3) {
         const chunk = list.slice(i, i + 3);
-        
         commandLines.push("│ › " + chunk.join('  ›  '));
       }
       msg += commandLines.join('\n') + '\n';
-      
-      
       msg += `╯───────∙⋆⋅ ※ ⋅⋆∙───────◈\n\n`;
     }
 
-    
     msg += `╮───────∙⋆⋅ ※ ⋅⋆∙───────◈\n`;
     msg += `│ الاوامــر : ${uniqueCommands.size}\n`;
     msg += `│ اســم الــبــوت : ${BOT_NAME}\n`;
     msg += `│ الــمــالــلك : ${DEVELOPER_NAME}\n`;
-    msg += `│ اسـتـخــدم : اوامر [اسم الامر] `; 
+    msg += `│ اسـتـخــدم : اوامر [اسم الامر] \n`; 
     msg += `╯───────∙⋆⋅ ※ ⋅⋆∙───────◈\n`;
 
-    const imageStream = await getImageStream();
-    return api.sendMessage({ body: msg, attachment: imageStream }, threadID);
+    // جلب الصورة الديناميكية بناءً على الجنس
+    const imageStream = await getGenderImageStream(senderID, api);
+    
+    return api.sendMessage({ body: msg, attachment: imageStream }, threadID, () => {
+      // تنظيف ملف الكاش المؤقت للمستخدم بعد الإرسال للحفاظ على مساحة السيرفر
+      const fallbackPath = path.join(__dirname, "cache", `menu_${senderID}.jpg`);
+      if (fs.existsSync(fallbackPath)) fs.unlinkSync(fallbackPath);
+    }, messageID);
   }
 
-  
+  // في حال طلب تفاصيل أمر معين (اوامر [اسم الأمر])
   const commandName = args.join(" ").trim().toLowerCase();
   const command = uniqueCommands.get(commandName) || Array.from(uniqueCommands.values()).find(c => (c.config.title && c.config.title.toLowerCase() === commandName) || (c.config.aliases && c.config.aliases.includes(commandName)));
 
   if (!command) {
-    return api.sendMessage(`❌ الأمر "${commandName}" غير موجود.`, threadID);
+    return api.sendMessage(`❌ الأمر "${commandName}" غير موجود.`, threadID, messageID);
   }
 
   const permMap = { 0: "عضو", 1: "أدمن المجموعة", 2: "مطور البوت" };
@@ -120,6 +165,10 @@ module.exports.HakimRun = async function({ api, event, args }) {
 │
 ╯───────∙⋆⋅ ※ ⋅⋆∙───────╰`;
 
-  const imageStream = await getImageStream();
-  return api.sendMessage({ body: details, attachment: imageStream }, threadID);
+  // عند عرض التفاصيل نرسل الصورة المتوافقة مع الجنس أيضاً لمزيد من التفاعل
+  const imageStream = await getGenderImageStream(senderID, api);
+  return api.sendMessage({ body: details, attachment: imageStream }, threadID, () => {
+    const fallbackPath = path.join(__dirname, "cache", `menu_${senderID}.jpg`);
+    if (fs.existsSync(fallbackPath)) fs.unlinkSync(fallbackPath);
+  }, messageID);
 };

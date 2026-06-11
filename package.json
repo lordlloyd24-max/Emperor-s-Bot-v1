@@ -1,7 +1,7 @@
 {
   "name": "emperors-bot",
   "version": "1.1.0",
-  "description": "Bot Bot v1.1.0 - developer by Hakim Tracks",
+  "description": "Emperors Bot v1.1.0 - developer by Dexter Rd",
   "main": "index.js",
   "scripts": {
     "start": "node start.js",

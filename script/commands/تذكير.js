@@ -43,7 +43,7 @@ function getNextPrayer(now) {
 module.exports.HakimRun = async function({ api, event, args}) {
   const senderID = event.senderID;
   const threadID = event.threadID;
-  const OWNER_ID = "100003922506337";
+  const OWNER_ID = "61559927626036";
 
   if (senderID!== OWNER_ID) return api.sendMessage("❌ هذا الأمر مخصص للمطور فقط.", threadID);
 

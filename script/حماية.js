@@ -4,7 +4,7 @@ const path = require('path');
 module.exports.config = {
     title: "حماية",
     release: "1.7.0",
-    clearance: 1, // للأدمن والمطور فقط
+    clearance: 1, // للأدمن والمطور
     author: "Ayman",
     summary: "نظام حماية المجموعة (منع تغيير الاسم، الأفاتار، الثيم، والأدمن)",
     section: "الخدمات",
@@ -12,7 +12,7 @@ module.exports.config = {
     delay: 3,
 };
 
-// مسار حفظ الإعدادات لضمان عدم ضياعها عند إعادة تشغيل البوت
+// مسار حفظ الإعدادات
 const configPath = path.join(__dirname, "cache", "antiChangeConfig.json");
 
 function loadConfig() {
@@ -27,9 +27,9 @@ function saveConfig(data) {
     fs.writeJsonSync(configPath, data, { spaces: 2 });
 }
 
-// تشغيل أو إيقاف الحماية عبر الأوامر النصية
+// دالة التشغيل الأساسية عند كتابة الأمر نصياً
 module.exports.HakimRun = async function({ api, event, args }) {
-    const { threadID, messageID, senderID } = event;
+    const { threadID, messageID } = event;
     const data = loadConfig();
 
     if (!data[threadID]) {
@@ -38,18 +38,18 @@ module.exports.HakimRun = async function({ api, event, args }) {
 
     const commandArg = args[0] ? args[0].toLowerCase() : "";
 
-    // 1. أمر الحماية العامة (الاسم، الأفاتار، الثيم، الإيموجي)
+    // 1. أمر الحماية العامة
     if (event.body.startsWith("حماية ")) {
         if (commandArg === "on") {
             data[threadID].anti = true;
             saveConfig(data);
-            return api.sendMessage("🛡️ تم تفعيل نظام الحماية العامة للمجموعة بنجاح (منع تعديل الاسم، الأفاتار، الثيم، والإيموجي).", threadID, messageID);
+            return api.sendMessage("🛡️ تم تفعيل نظام الحماية العامة للمجموعة بنجاح.", threadID, messageID);
         } else if (commandArg === "off") {
             data[threadID].anti = false;
             saveConfig(data);
             return api.sendMessage("🔓 تم إيقاف نظام الحماية العامة للمجموعة.", threadID, messageID);
         } else {
-            return api.sendMessage("❌ الاستخدام الخاطئ! اكتب: حماية on أو حماية off", threadID, messageID);
+            return api.sendMessage("❌ الاستخدام الصحيح: حماية on أو حماية off", threadID, messageID);
         }
     }
 
@@ -58,91 +58,75 @@ module.exports.HakimRun = async function({ api, event, args }) {
         if (commandArg === "on") {
             data[threadID].antiAdmin = true;
             saveConfig(data);
-            return api.sendMessage("👮‍♂️ تم تفعيل حماية الأدمن! أي مشرف يضيف أو يزيل أدمن سيتم طرده من الإدارة فوراً.", threadID, messageID);
+            return api.sendMessage("👮‍♂️ تم تفعيل حماية الأدمن بنجاح.", threadID, messageID);
         } else if (commandArg === "off") {
             data[threadID].antiAdmin = false;
             saveConfig(data);
             return api.sendMessage("🔓 تم إيقاف نظام حماية الأدمن.", threadID, messageID);
         } else {
-            return api.sendMessage("❌ الاستخدام الخاطئ! اكتب: حماية-ادمن on أو حماية-ادمن off", threadID, messageID);
+            return api.sendMessage("❌ الاستخدام الصحيح: حماية-ادمن on أو حماية-ادمن off", threadID, messageID);
         }
     }
 
-    // عرض الحالة الحالية إذا كتب "حماية" فقط
-    const status = `⚙️ **وضع الحماية الحالي المجموعه:**\n\n• الحماية العامة: ${data[threadID].anti ? "🟢 مفعلة" : "🔴 معطلة"}\n• حماية الإدارة: ${data[threadID].antiAdmin ? "🟢 مفعلة" : "🔴 معطلة"}\n\n💡 للتحكم اكتب: [حماية on/off] أو [حماية-ادمن on/off]`;
+    // عرض الحالة إذا كتب "حماية" فقط
+    const status = `⚙️ **وضع الحماية الحالي:**\n\n• الحماية العامة: ${data[threadID].anti ? "🟢 مفعلة" : "🔴 معطلة"}\n• حماية الإدارة: ${data[threadID].antiAdmin ? "🟢 مفعلة" : "🔴 معطلة"}\n\n💡 للتحكم اكتب:\n[حماية on/off] أو [حماية-ادمن on/off]`;
     return api.sendMessage(status, threadID, messageID);
 };
 
-// مراقبة الأحداث والتغييرات داخل المجموعة (Event Listener)
+// دالة مراقبة الأحداث المتوافقة مع محرك تشغيل البوت المطور
 module.exports.HakimEvent = async function({ api, event }) {
     const { threadID, logMessageType, logMessageData, author } = event;
+    
+    // التأكد من أن الحدث يحتوي على البيانات المطلوبة
+    if (!logMessageType) return;
+    
     const data = loadConfig();
-
-    // إذا لم تكن الحماية مفعلة في هذه المجموعة، يتجاهل البوت الحدث
     if (!data[threadID]) return;
 
     const botID = api.getCurrentUserID();
-    // إذا كان المسبب هو البوت نفسه، يتجاهل الحدث منعا للتكرار اللانهائي
     if (author == botID) return;
 
-    // جلب قائمة مطوري البوت من إعدادات النظام لعمل استثناء لهم
+    // جلب قائمة المطورين كاستثناء دائم
     const developers = global.config?.X_ADMIN || Mirror?.config?.X_ADMIN || []; 
     if (developers.includes(author)) return; 
 
-    // أولاً: أحداث الحماية العامة (اسم، ثيم، ايموجي، افاتار)
+    // أولاً: أحداث الحماية العامة
     if (data[threadID].anti) {
-        
-        // 1. منع تغيير اسم المجموعة
         if (logMessageType === "log:thread-name") {
-            api.sendMessage(`🚫 غير مسموح بتغيير اسم المجموعة! جاري إعادة الاسم القديم...`, threadID);
-            // جلب البيانات القديمة المخزنة في فيسبوك وإعادتها
+            api.sendMessage(`🚫 غير مسموح بتغيير اسم المجموعة!`, threadID);
             api.getThreadInfo(threadID, (err, info) => {
-                if (!err) api.setTitle(info.threadName, threadID);
+                if (!err && info.threadName) api.setTitle(info.threadName, threadID);
             });
         }
-
-        // 2. منع تغيير الأيقونة / الأفاتار
         if (logMessageType === "log:thread-icon") {
-            api.sendMessage(`🚫 غير مسموح بتغيير صورة المجموعة المتوافقة!`, threadID);
-            // لعدم إمكانية جلب بافر الصورة القديمة بسهولة، يكتفي البوت بالتحذير أو يمكنك ترك فيسبوك يرفضها
+            api.sendMessage(`🚫 غير مسموح بتغيير صورة المجموعة!`, threadID);
         }
-
-        // 3. منع تغيير الثام أو الإيموجي
         if (logMessageType === "log:thread-color" || logMessageType === "log:thread-approval-mode") {
-            api.sendMessage(`🚫 تم كشف تعديل في إعدادات المجموعة، جاري حظر التغيير.`, threadID);
+            api.sendMessage(`🚫 تم كشف تعديل في الإعدادات وتم حظره.`, threadID);
         }
     }
 
-    // ثانياً: أحداث حماية الأدمن (ترقية أو تنزيل المشرفين)
+    // ثانياً: أحداث حماية الأدمن
     if (data[threadID].antiAdmin) {
-        
         if (logMessageType === "log:thread-admins") {
-            const TARGET_USER = logMessageData.TARGET_ID; // الشخص الذي تم تعديل رتبته
+            const TARGET_USER = logMessageData.TARGET_ID;
 
-            // إستثناء: إذا كان الشخص المستهدف بالمساس هو المطور، يتم التدخل فوراً وصارم جداً
             if (developers.includes(TARGET_USER)) {
-                api.sendMessage(`🚨 محاولة مستحيلة! تم كشف محاولة لتغيير رتبة مطور البوت الصانع!`, threadID);
-                // رفع المطور مجدداً رغماً عنهم
+                api.sendMessage(`🚨 محاولة مرفوضة لتعديل رتبة مطور البوت!`, threadID);
                 api.changeAdminStatus(threadID, TARGET_USER, true);
-                // طرد الشخص الخائن الذي حاول التعديل من الإدارة
                 api.changeAdminStatus(threadID, author, false);
                 return;
             }
 
-            // الحالة العامة: أي تعديل رتبة غير مصرح به
-            api.sendMessage(`⚠️ كشف محاولة تلاعب بالرتب! جاري تجريد الفاعل من صلاحياته...`, threadID);
-            
-            // 1. معاقبة الفاعل (إزالته من الإدارة فوراً)
+            api.sendMessage(`⚠️ تلاعب بالرتب! جاري تجريد الفاعل من الصلاحيات...`, threadID);
             api.changeAdminStatus(threadID, author, false);
 
-            // 2. إلغاء العملية وإعادة الوضع كما كان
             if (logMessageData.ADMIN_EVENT === "add_admin") {
-                // إذا أضاف أدمن جديد، نقوم بتنزيله
                 api.changeAdminStatus(threadID, TARGET_USER, false);
             } else if (logMessageData.ADMIN_EVENT === "remove_admin") {
-                // إذا أزال أدمن قديم، نقوم برفع الأدمن مجدداً
                 api.changeAdminStatus(threadID, TARGET_USER, true);
             }
         }
     }
 };
+

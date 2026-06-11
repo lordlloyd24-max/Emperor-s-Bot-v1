@@ -6,7 +6,7 @@ module.exports.config = {
     title: "اوامر",
     release: "2.0.1",
     clearance: 0,
-    author: "Hakim Tracks",
+    author: "Dexter Tracks",
     summary: "عرض قائمة الأوامر أو تفاصيل أمر معين",
     section: "عـــامـة",
     syntax: "اوامر [اسم الأمر]",
@@ -17,7 +17,7 @@ module.exports.config = {
 const DEFAULT_IMAGE_URL = "https://i.postimg.cc/Lss0c7jJ/received-1530539828856515.jpg";
 const LOCAL_IMG_PATH = path.join(__dirname, "img", "menu.png");
 const BOT_NAME = "Mirror Bot v2.0.1";
-const DEVELOPER_NAME = "Hakim Tracks";
+const DEVELOPER_NAME = "Dexter Rd";
 
 // ⚠️ ضع هنا روابط الـ 3 صور الخاصة بالرجل (الأولاد)
 const boyImages = [

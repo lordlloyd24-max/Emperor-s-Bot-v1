@@ -1,7 +1,7 @@
 {
-  "name": "mirror-bot",
+  "name": "emperors-bot",
   "version": "1.1.0",
-  "description": "Mirror Bot v1.1.0 - developer by Hakim Tracks",
+  "description": "Bot Bot v1.1.0 - developer by Hakim Tracks",
   "main": "index.js",
   "scripts": {
     "start": "node start.js",

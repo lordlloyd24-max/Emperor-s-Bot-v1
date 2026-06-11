@@ -1,20 +1,18 @@
-# Mirror Bot 
-# Developed By Hakim Tracks 
-![Mirror Bot Agent](https://i.imgur.com/aAO58sQ.jpeg)
+# Emperors Bot 
+# Developed By DexterRd 
+![Emperors Bot Agent](https://i.imgur.com/aAO58sQ.jpeg)
 
 ## معلومات البوت
-- **اسم البوت:** Mirror Bot
+- **اسم البوت:** Emperors Bot
 - **الوظيفة:** بوت ماسنجر
 
 ## معلومات المطور
-- **صلاح الدين (Hakim Tracks)**
-  - [حساب فيسبوك](fb.com/Hakim.Tracks.Ch)
+- **Dexter Rd**
+  - [حساب فيسبوك](Mirroracks.com/Hakim.Tracks.Ch)
 
 ## مشاريع أخرى
-- Rock Bot
-- Mirror Bot
-- Mirror Bot Agent 
-- Revo Bot
+- RocBot- Mirror Bot
+- Mirror Bot AgenRevo Revo Bot
 
 ## التواصل
 - للتواصل مع المطور، استخدم رابط فيسبوك المرفق 

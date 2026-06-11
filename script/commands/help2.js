@@ -21,9 +21,9 @@ const DEVELOPER_NAME = "Hakim Tracks";
 
 // ⚠️ ضع هنا روابط الـ 3 صور الخاصة بالرجل (الأولاد)
 const boyImages = [
-  "https://example.com/boy1.jpg",
-  "https://example.com/boy2.jpg",
-  "https://example.com/boy3.jpg"
+  "https://i.postimg.cc/mhxwhpcj/6b0ba5a8dc7124680674d4417b645103.jpg",
+  "https://i.postimg.cc/rw1hRTNr/8d73fe3828a606f6d2895e901d6cb67f.jpg",
+  "https://i.postimg.cc/rs7hxFHr/a83bcdded3cabf95582db6d14969cfc8.jpg"
 ];
 
 // ⚠️ ضع هنا روابط الـ 3 صور الخاصة بالمرأة (البنات)

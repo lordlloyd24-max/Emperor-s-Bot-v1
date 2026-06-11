@@ -6,14 +6,15 @@ module.exports.config = {
     author: "Ayman"
 };
 
-// تحديد المسار الصحيح للمجلد الأب لضمان الوصول لملف الكاش
-const configPath = path.join(__dirname, "..", "commands", "cache", "antiChangeConfig.json");
+// استخدام مسار ديناميكي آمن للوصول لملف الإعدادات
+const configPath = path.resolve(__dirname, '../../script/commands/cache/antiChangeConfig.json');
 
 function loadConfig() {
     try {
         if (!fs.existsSync(configPath)) return {};
         return fs.readJsonSync(configPath);
     } catch (e) {
+        console.log("خطأ في قراءة ملف كاش الحماية:", e);
         return {};
     }
 }
@@ -29,11 +30,11 @@ module.exports.HakimEvent = async function({ api, event }) {
     const botID = api.getCurrentUserID();
     if (author == botID) return;
 
-    // جلب قائمة المطورين كاستثناء دائم
+    // جلب قائمة المطورين للاستثناء
     const developers = global.config?.X_ADMIN || Mirror?.config?.X_ADMIN || []; 
     if (developers.includes(author)) return; 
 
-    // أولاً: أحداث الحماية العامة
+    // 1. نظام الحماية العامة
     if (data[threadID].anti) {
         if (logMessageType === "log:thread-name") {
             api.sendMessage(`🚫 غير مسموح بتغيير اسم المجموعة! جاري استعادة الاسم...`, threadID);
@@ -45,34 +46,38 @@ module.exports.HakimEvent = async function({ api, event }) {
             api.sendMessage(`🚫 غير مسموح بتغيير صورة المجموعة!`, threadID);
         }
         if (logMessageType === "log:thread-color" || logMessageType === "log:thread-approval-mode") {
-            api.sendMessage(`🚫 تم كشف تعديل في الإعدادات وتم إلغاؤه.`, threadID);
+            api.sendMessage(`🚫 تم كشف تعديل في إعدادات المجموعة وحظره.`, threadID);
         }
     }
 
-    // ثانياً: أحداث حماية الأدمن
+    // 2. نظام حماية الأدمن
     if (data[threadID].antiAdmin) {
         if (logMessageType === "log:thread-admins") {
             const TARGET_USER = logMessageData.TARGET_ID;
 
-            // إستثناء المطورين من العقاب أو الإزالة
+            // استثناء المطور من الحذف أو العقاب
             if (developers.includes(TARGET_USER)) {
-                api.sendMessage(`🚨 محاولة مرفوضة لتعديل رتبة مطور البوت الصانع!`, threadID);
+                api.sendMessage(`🚨 محاولة مرفوضة لتعديل رتبة مطور البوت!`, threadID);
                 api.changeAdminStatus(threadID, TARGET_USER, true);
                 api.changeAdminStatus(threadID, author, false);
                 return;
             }
 
-            api.sendMessage(`⚠️ تلاعب برتب الإدارة! جاري تجريد المشرف المسؤول من صلاحياته...`, threadID);
-            
-            // تنزيل الشخص الفاعل من الإدارة فوراً
-            api.changeAdminStatus(threadID, author, false);
-
-            // إلغاء العملية وإعادة الرتبة السابقة للمستهدف
-            if (logMessageData.ADMIN_EVENT === "add_admin") {
-                api.changeAdminStatus(threadID, TARGET_USER, false);
-            } else if (logMessageData.ADMIN_EVENT === "remove_admin") {
-                api.changeAdminStatus(threadID, TARGET_USER, true);
-            }
+            // تنفيذ العقوبة فوراً على المشرف الخائن
+            api.changeAdminStatus(threadID, author, false, (err) => {
+                if (err) {
+                    api.sendMessage(`❌ فشل تجريد الفاعل من صلاحياته. تأكد أن البوت أدمن في المجموعة ولديه صلاحية إدارة المشرفين!`, threadID);
+                } else {
+                    api.sendMessage(`⚠️ تم كشف تلاعب بالرتب! جاري تجريد الفاعل من صلاحيات الإدارة فوراً...`, threadID);
+                    
+                    // إرجاع الرتبة السابقة للشخص المستهدف
+                    if (logMessageData.ADMIN_EVENT === "add_admin") {
+                        api.changeAdminStatus(threadID, TARGET_USER, false);
+                    } else if (logMessageData.ADMIN_EVENT === "remove_admin") {
+                        api.changeAdminStatus(threadID, TARGET_USER, true);
+                    }
+                }
+            });
         }
     }
 };

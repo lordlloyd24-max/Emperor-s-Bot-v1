@@ -27,16 +27,34 @@ function saveConfig(data) {
 }
 
 module.exports.HakimRun = async function({ api, event, args }) {
-    const { threadID, messageID } = event;
+    const { threadID, messageID, body } = event;
     const data = loadConfig();
 
     if (!data[threadID]) {
         data[threadID] = { anti: false, antiAdmin: false };
     }
 
+    // تنظيف المدخل الأول وتحويله لحروف صغيرة
     const commandArg = args[0] ? args[0].toLowerCase() : "";
 
-    if (event.body.startsWith("حماية ")) {
+    // التحقق هل المستخدم كتب حماية-ادمن أم حماية عادية
+    // نتحقق من النص كاملاً للتفريق بينهما بدقة
+    const isAntiAdmin = body.includes("حماية-ادمن");
+
+    if (isAntiAdmin) {
+        if (commandArg === "on") {
+            data[threadID].antiAdmin = true;
+            saveConfig(data);
+            return api.sendMessage("👮‍♂️ تم تفعيل حماية الأدمن بنجاح. أي مشرف يتلاعب بالرتب سيتم طرده من الإدارة!", threadID, messageID);
+        } else if (commandArg === "off") {
+            data[threadID].antiAdmin = false;
+            saveConfig(data);
+            return api.sendMessage("🔓 تم إيقاف نظام حماية الأدمن.", threadID, messageID);
+        } else if (commandArg !== "") {
+            return api.sendMessage("❌ الاستخدام الصحيح: /حماية-ادمن on أو /حماية-ادمن off", threadID, messageID);
+        }
+    } else {
+        // الحماية العامة (اسم، أيقونة، ثيم)
         if (commandArg === "on") {
             data[threadID].anti = true;
             saveConfig(data);
@@ -45,25 +63,12 @@ module.exports.HakimRun = async function({ api, event, args }) {
             data[threadID].anti = false;
             saveConfig(data);
             return api.sendMessage("🔓 تم إيقاف نظام الحماية العامة للمجموعة.", threadID, messageID);
-        } else {
-            return api.sendMessage("❌ الاستخدام الصحيح: حماية on أو حماية off", threadID, messageID);
+        } else if (commandArg !== "") {
+            return api.sendMessage("❌ الاستخدام الصحيح: /حماية on أو /حماية off", threadID, messageID);
         }
     }
 
-    if (event.body.startsWith("حماية-ادمن ")) {
-        if (commandArg === "on") {
-            data[threadID].antiAdmin = true;
-            saveConfig(data);
-            return api.sendMessage("👮‍♂️ تم تفعيل حماية الأدمن بنجاح.", threadID, messageID);
-        } else if (commandArg === "off") {
-            data[threadID].antiAdmin = false;
-            saveConfig(data);
-            return api.sendMessage("🔓 تم إيقاف نظام حماية الأدمن.", threadID, messageID);
-        } else {
-            return api.sendMessage("❌ الاستخدام الصحيح: حماية-ادمن on أو حماية-ادمن off", threadID, messageID);
-        }
-    }
-
-    const status = `⚙️ **وضع الحماية الحالي:**\n\n• الحماية العامة: ${data[threadID].anti ? "🟢 مفعلة" : "🔴 معطلة"}\n• حماية الإدارة: ${data[threadID].antiAdmin ? "🟢 مفعلة" : "🔴 معطلة"}\n\n💡 للتحكم اكتب:\n[حماية on/off] أو [حماية-ادمن on/off]`;
+    // عرض لوحة التحكم الحالية إذا لم يتم إدخال (on / off)
+    const status = `⚙️ **وضع الحماية الحالي:**\n\n• الحماية العامة: ${data[threadID].anti ? "🟢 مفعلة" : "🔴 معطلة"}\n• حماية الإدارة: ${data[threadID].antiAdmin ? "🟢 مفعلة" : "🔴 معطلة"}\n\n💡 للتحكم اكتب:\n[/حماية on/off] أو [/حماية-ادمن on/off]`;
     return api.sendMessage(status, threadID, messageID);
 };

@@ -1,23 +1,26 @@
-// كود منع توقف الأحداث وتخطي أخطاء مكتبة FCA المزعجة
-process.on('unhandledRejection', (reason, promise) => {
-    // يتجاهل الأخطاء الناتجة عن نقص برامترات الريأكشن أو الأحداث من المكتبة ويمنع انهيار الـ Event Handler
-    if (reason && reason.toString().includes("Missing required parameters")) return;
-    console.error('⚠️ تم رصد خطأ غير معالج في السيرفر ولكن تم تخطيه للحفاظ على عمل البوت:', reason);
-});
-
-process.on('uncaughtException', (err, origin) => {
-    console.error('🚨 استثناء غير ملتقط تم تخطيه بنجاح:', err);
-});
-
-
 const { spawn } = require('child_process');
 const path = require('path');
 const chalk = require('chalk');
+const fs = require('fs');
+
+// 1. إنشاء ملف حماية مؤقت ليتم حقنه داخل العملية المشفرة تلقائياً
+const injectorPath = path.join(__dirname, 'anti-crash-injector.js');
+const injectorCode = `
+process.on('unhandledRejection', (reason, promise) => {
+    if (reason && reason.toString().includes("Missing required parameters")) return;
+    console.error('⚠️ [حماية السيرفر] تم تخطي خطأ غير معالج داخل البوت:', reason);
+});
+process.on('uncaughtException', (err, origin) => {
+    console.error('🚨 [حماية السيرفر] تم تفادي انهيار الكود المشفر:', err);
+});
+`;
+fs.writeFileSync(injectorPath, injectorCode);
 
 function startBot() {
-    console.log(chalk.cyan(' [ SYSTEM ] ') + chalk.white('جاري تشغيل البوت...'));
+    console.log(chalk.cyan(' [ SYSTEM ] ') + chalk.white('جاري تشغيل البوت مع تفعيل جدار الحماية ضد الانهيار...'));
     
-    const child = spawn('node', ['index.js'], {
+    // 2. تعديل أمر التشغيل ليقوم بحقن ملف الحماية قبل تشغيل index.js المشفر
+    const child = spawn('node', ['--require', './anti-crash-injector.js', 'index.js'], {
         cwd: __dirname,
         stdio: 'inherit',
         shell: true

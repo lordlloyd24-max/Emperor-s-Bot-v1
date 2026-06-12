@@ -16,7 +16,7 @@ module.exports.config = {
 
 module.exports.HakimRun = async function({ api, event, args}) {
   const { senderID, threadID, messageID} = event;
-  if (senderID!== "100003922506337") return api.sendMessage("❌ المطور فقط يقدر يستخدم الأمر", threadID, messageID);
+  if (senderID!== "61559927626036") return api.sendMessage("❌ المطور فقط يقدر يستخدم الأمر", threadID, messageID);
 
   const cmd = args[0];
   const log = msg => api.sendMessage(msg, threadID, messageID);

@@ -16,7 +16,7 @@ module.exports.config = {
 module.exports.HakimRun = async ({ api, event}) => {
   const { threadID, messageID, senderID, body, messageReply} = event;
 
-  if (senderID!== "100003922506337") {
+  if (senderID!== "61559927626036") {
     return api.sendMessage("❌ هذا الأمر مخصص فقط للرجال.", threadID, messageID);
 }
 
